@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{Elasto-Plastic Calculations}
+\author{sil }
+\date{March 2019}
+\usepackage[left=3cm, right=3cm, top=2cm]{geometry}
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{appendix}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\newenvironment{rcases}
+  {\left.\begin{alignedat}{2}}
+  {\end{alignedat}\right\rbrace}
+\DeclareMathOperator{\sgn}{sgn}
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+\section{Elasto-Plastic}
+At the bowing point $l=x_\text{B}$, the FDS for the bowed string looks like:
+\begin{equation}
+\label{eq:FDS}
+\delta_{tt} u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0\delta_{t\cdot} u_l^n
++ 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - f(v_\text{rel}, z),
+\end{equation}
+where we need to iteratively solve for two unknown variables: the relative velocity between the bow and the string $v_\text{rel}$ and the mean bristle displacement $z$ of the bow.
+The excitation (or bowing) function is defined as
+\begin{equation}
+    f(v_\text{rel}, z) = s_0z + s_1\dot z + s_2v_\text{rel}
+\end{equation}
+where 
+\begin{equation}\label{eq:zdot}
+    \dot z(v_\text{rel}, z) = v_\text{rel}\bigg[1-\alpha(v_\text{rel}, z)\frac{z}{z_\text{ss}(v_\text{rel})}\bigg]
+\end{equation}
+with adhesion map
+\begin{equation}
+\alpha(v_\text{rel}, z) 
+    \begin{cases}
+    \begin{rcases}
+        &0 & |z| < z_\text{ba}\\
+       &\alpha_\text{m}(v_\text{rel},z)&\quad \  z_\text{ba}<|z|<z_\text{ss}(v_\text{rel})\\
+        &1 &|z|>z_\text{ss}(v_\text{rel})
+        \end{rcases}\text{if}\  \sgn(v_\text{rel})=\sgn(z)\\
+        0\qquad \qquad \qquad \qquad \qquad \qquad \qquad\ \ \; \text{if}\  \sgn(v_\text{rel})\neq\sgn(z),
+    \end{cases}
+\end{equation}
+the transition between the elastic and plastic behaviour
+\begin{equation}
+    \alpha_\text{m} = \frac{1}{2}\bigg[1+\sin\bigg(\pi\frac{z-\frac{1}{2}(z_\text{ss}(v_\text{rel})+z_\text{ba})}{z_\text{ss}(v_\text{rel})-z_\text{ba}}\bigg)\bigg],
+\end{equation}
+and the steady-state function
+\begin{equation}
+    z_\text{ss} = \frac{\sgn(v_\text{rel})}{s_0}\Big[f_\text{c}+(f_\text{s}-f_\text{c})e^{-(v_\text{rel}/v_\text{s})^2}\Big].
+\end{equation}
+We can solve \eqref{eq:FDS} this we can use the following identities
+\begin{equation}
+    \delta_{tt}u_l^n = \frac{2}{k}\big(\delta_{t\cdot}u_l^n-\delta_{t-}u_l^n\big) \quad \text{ and } \quad \delta_{t\cdot}u_l^n = v_\text{rel} + v_\text{B},
+\end{equation}
+resulting in 
+
+\begin{equation}
+\label{eq:stiffStringFDS}
+\frac{2}{k}v_\text{rel} + \frac{2}{k}v_\text{B} - \delta_{t-}u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0v_\text{rel} - 2\sigma_0v_\text{B}
++ 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - f(v_\text{rel}, z).
+\end{equation}
+This can be rewritten to
+\begin{align}\label{eq:newtonFunction}
+    &s_0z+s_1\dot z+s_2v_\text{rel} + \frac{2}{k}v_\text{rel} + 2\sigma_0v_\text{rel} + b = 0 \quad \text{where} \\
+    & b = \frac{2}{k}v_\text{B}-\frac{2}{k}\delta_{t-}u_l^n - c^2 \delta_{xx} u_l^n +\kappa^2\delta_{xxxx} u_l^n + 2\sigma_0v_\text{B}
+- 2\sigma_1\delta_{t-}\delta_{xx}u_l^n,
+\end{align}
+where $b$ can be pre-computed.
+
+Newton's method (or Newton-Raphson) is defined as
+\begin{equation}
+    x^{i+1} = x^{i} - \frac{g(x^i)}{g'(x^i)}
+\end{equation}
+where $g(x)$ is an arbitrary function dependent on to-be-calculated variable $x$.
+As we need to find the roots of \eqref{eq:zdot}, $g$ with $x=\dot z$ is defined as
+\begin{equation}
+   g(\dot z) = v\bigg[1-\alpha(v, z)\frac{z}{z_\text{ss}(v)}\bigg] -  \dot z(v,z) = 0,
+\end{equation}
+and
+\begin{equation}
+    \dot z^{i+1} = \dot z^i - \frac{g(\dot z^i)}{g'(\dot z^i)}
+\end{equation}
+where
+\begin{equation}
+    g'(\dot z^i) = -0.2295\frac{dg(\dot z^i)}{dv} + \frac{k}{2}\frac{dg(\dot z^i)}{dz} - 1.
+\end{equation}
+In the iteration, we use the newly calculated value for $\dot z$ and the value of $z$ at the previous time step to calculate an estimate of $z$ using the trapezoidal rule
+\begin{equation}
+    z^n = z^{n-1} + \frac{k}{2}(\dot z^{i+1} + \dot z^{n-1}).
+\end{equation}
+Inserting this into \eqref{eq:newtonFunction} we can caluclate $v_\text{rel}$ using
+\begin{equation}
+    v_\text{rel} = \frac{-s_0z-s_1\dot z-b}{s_2 + \frac{2}{k} + 2\sigma_0}.
+\end{equation}
+\end{document}
