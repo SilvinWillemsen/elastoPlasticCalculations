@@ -15,66 +15,214 @@
   {\left.\begin{alignedat}{2}}
   {\end{alignedat}\right\rbrace}
 \DeclareMathOperator{\sgn}{sgn}
+\usepackage[dvipsnames]{xcolor}
+\def\SBcomment[#1]{\textcolor{Red}{#1}}
+\def\SWcomment[#1]{\textcolor{Green}{#1}}
+\def\SScomment[#1]{\textcolor{Blue}{#1}}
+
 \begin{document}
 
 \maketitle
 
 \section{Introduction}
-\section{Elasto-Plastic}
-At the bowing point $l=x_\text{B}$, the FDS for the bowed string looks like:
+\SWcomment[Like in the dafx paper, ]\SBcomment[you can make comments like this!] \SScomment[Also you Stefania :)]
+\section{Continuous-time}
+The PDE for the bowed stiff string looks like:
 \begin{equation}
-\label{eq:FDS}
-\delta_{tt} u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0\delta_{t\cdot} u_l^n
-+ 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - f(v_\text{rel}, z),
+    u_{tt} = c^2u_{xx}-\kappa^2u_{xxxx}-2\sigma_0u_t+2\sigma_1u_{txx}-J(x_\text{B})f(v,z)/\rho A
 \end{equation}
-where we need to iteratively solve for two unknown variables: the relative velocity between the bow and the string $v_\text{rel}$ and the mean bristle displacement $z$ of the bow.
-The excitation (or bowing) function is defined as
+where
 \begin{equation}
-    f(v_\text{rel}, z) = s_0z + s_1\dot z + s_2v_\text{rel}
+    f(v, z) = s_0z + s_1\dot z + s_2v + s_3w
 \end{equation}
-where 
+and 
 \begin{equation}\label{eq:zdot}
-    \dot z(v_\text{rel}, z) = v_\text{rel}\bigg[1-\alpha(v_\text{rel}, z)\frac{z}{z_\text{ss}(v_\text{rel})}\bigg]
+    \dot z(v, z) = v\bigg[1-\alpha(v, z)\frac{z}{z_\text{ss}(v)}\bigg]
 \end{equation}
 with adhesion map
-\begin{equation}
-\alpha(v_\text{rel}, z) 
+\begin{equation}\label{eq:alpha}
+\alpha(v, z) 
     \begin{cases}
     \begin{rcases}
         &0 & |z| < z_\text{ba}\\
-       &\alpha_\text{m}(v_\text{rel},z)&\quad \  z_\text{ba}<|z|<z_\text{ss}(v_\text{rel})\\
-        &1 &|z|>z_\text{ss}(v_\text{rel})
-        \end{rcases}\text{if}\  \sgn(v_\text{rel})=\sgn(z)\\
-        0\qquad \qquad \qquad \qquad \qquad \qquad \qquad\ \ \; \text{if}\  \sgn(v_\text{rel})\neq\sgn(z),
+       &\alpha_\text{m}(v,z)&\quad \  z_\text{ba}<|z|<z_\text{ss}(v)\\
+        &1 &|z|>z_\text{ss}(v)
+        \end{rcases}\text{if}\  \sgn(v)=\sgn(z)\\
+        0\qquad \qquad \qquad \qquad \qquad \qquad \qquad\ \ \; \text{if}\  \sgn(v)\neq\sgn(z),
     \end{cases}
 \end{equation}
 the transition between the elastic and plastic behaviour
 \begin{equation}
-    \alpha_\text{m} = \frac{1}{2}\bigg[1+\sin\bigg(\pi\frac{z-\frac{1}{2}(z_\text{ss}(v_\text{rel})+z_\text{ba})}{z_\text{ss}(v_\text{rel})-z_\text{ba}}\bigg)\bigg],
+    \alpha_\text{m} = \frac{1}{2}\big[1+\sin\big(\sgn(z)\Phi\big)\big]\quad \text{where}\quad \Phi = \pi\frac{z-\sgn(z)\frac{1}{2}(z_\text{ss}(v)+z_\text{ba})}{z_\text{ss}(v)-z_\text{ba}},
 \end{equation}
 and the steady-state function
-\begin{equation}
-    z_\text{ss} = \frac{\sgn(v_\text{rel})}{s_0}\Big[f_\text{c}+(f_\text{s}-f_\text{c})e^{-(v_\text{rel}/v_\text{s})^2}\Big].
+\begin{equation}\label{eq:zss}
+    z_\text{ss} = \frac{\sgn(v)}{s_0}\Big[f_\text{C}+(f_\text{S}-f_\text{C})e^{-(v/v_\text{S})^2}\Big].
 \end{equation}
-We can solve \eqref{eq:FDS} this we can use the following identities
+\section{Discrete-time}
+The FDS for the bowed string looks like:
+\begin{equation}\label{eq:FDS1}
+    \delta_{tt} u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0\delta_{t\cdot} u_l^n
+    + 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - J(x_\text{B}^n)f(v^n, z^n)/\rho A,
+\end{equation}
+where $x_\text{B} \in [0,\hdots, L]$. If we use the following notation
 \begin{equation}
-    \delta_{tt}u_l^n = \frac{2}{k}\big(\delta_{t\cdot}u_l^n-\delta_{t-}u_l^n\big) \quad \text{ and } \quad \delta_{t\cdot}u_l^n = v_\text{rel} + v_\text{B},
+    I(x_\text{B}^n)u^n_l \Rightarrow u^n_{x_\text{B}}
+\end{equation}
+the following description for the relative velocity at the bowing point $x_\text{B}$ can be defined
+\begin{equation}
+    v^n = \delta_{t\cdot}u^n_{x_\text{B}} - v_\text{B}^n \quad \Rightarrow \quad \delta_{t\cdot}u^n_{x_\text{B}} = v^n + v_\text{B}^n.
+\end{equation}
+Then, equation \eqref{eq:FDS1} can be rewritten at the bowing point $l=x_\text{B}$:
+\begin{equation}
+\label{eq:FDS}
+\delta_{tt} u_{x_\text{B}}^n =c^2 \delta_{xx} u_{x_\text{B}}^n -\kappa^2\delta_{xxxx} u_{x_\text{B}}^n - 2\sigma_0(v^n + v_\text{B}^n)
++ 2\sigma_1\delta_{t-}\delta_{xx}u_{x_\text{B}}^n - f(v^n, z^n)/\rho Ah,
+\end{equation}
+where we need to iteratively solve for two unknown variables: the relative velocity between the bow and the string $v$ and the mean bristle displacement $z$ of the bow.
+The excitation (or bowing) function is defined as
+\begin{equation}
+    f(v^n, z^n) = s_0z^n + s_1 a^n + s_2v^n + s_3w^n
+\end{equation}
+where 
+\begin{equation}\label{eq:an}
+    a^n = (\mu_{t+})^{-1}\delta_{t+}z^n = \frac{2}{k}(z^n-z^{n-1})-a^{n-1}
+\end{equation}
+is the discrete counterpart of $\dot{z}$ and describes the bilinear transform of $z$. 
+At the bowing position we can rewrite \eqref{eq:FDS} using the following identities
+\begin{equation}
+    \delta_{tt}u_l^n = \frac{2}{k}\big(\delta_{t\cdot}u_l^n-\delta_{t-}u_l^n\big) \quad \text{ and } \quad \delta_{t\cdot}u_l^n = v^n + v_\text{B}^n,
 \end{equation}
 resulting in 
 
 \begin{equation}
 \label{eq:stiffStringFDS}
-\frac{2}{k}v_\text{rel} + \frac{2}{k}v_\text{B} - \delta_{t-}u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0v_\text{rel} - 2\sigma_0v_\text{B}
-+ 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - f(v_\text{rel}, z).
+\frac{2}{k}v^n + \frac{2}{k}v_\text{B}^n - \frac{2}{k}\delta_{t-}u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0v^n - 2\sigma_0v_\text{B}^n
++ 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - f(v^n, z^n)/\rho Ah.
 \end{equation}
+\\
 This can be rewritten to
-\begin{align}\label{eq:newtonFunction}
-    &s_0z+s_1\dot z+s_2v_\text{rel} + \frac{2}{k}v_\text{rel} + 2\sigma_0v_\text{rel} + b = 0 \quad \text{where} \\
-    & b = \frac{2}{k}v_\text{B}-\frac{2}{k}\delta_{t-}u_l^n - c^2 \delta_{xx} u_l^n +\kappa^2\delta_{xxxx} u_l^n + 2\sigma_0v_\text{B}
-- 2\sigma_1\delta_{t-}\delta_{xx}u_l^n,
-\end{align}
-where $b$ can be pre-computed.
+\begin{equation}\label{eq:newtonFunction}
+g_1(v^n, z^n) = \Big(\frac{2}{k} + 2\sigma_0\Big)v^n + \frac{s_0z^n+s_1a^n+s_2v^n+s_3w^n}{\rho A h} + b^n = 0 \end{equation}
+where
+\begin{equation}
+    b^n = \frac{2}{k}v_\text{B}^n-\frac{2}{k}\delta_{t-}u_l^n - c^2 \delta_{xx} u_l^n +\kappa^2\delta_{xxxx} u_l^n + 2\sigma_0v_\text{B}^n
+- 2\sigma_1\delta_{t-}\delta_{xx}u_l^n
+\end{equation}
+can be pre-computed. Using $\alpha^n = \alpha(v^n, z^n)$ and $z_\text{ss}^n = z_\text{ss}(v^n)$ as the discrete counterparts of \eqref{eq:alpha} and \eqref{eq:zss} respectively, we can rewrite equation \eqref{eq:zdot} to (using $a^n$ in \eqref{eq:an})
+\begin{equation}
+   g_2(v^n,z^n) = v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg] -  a^n = 0.
+\end{equation}
+This function, together with \eqref{eq:newtonFunction} can be used for multivariate newton raphson:
 
+\begin{equation}
+    \begin{bmatrix}
+    v_{(i+1)}^n\\
+    z_{(i+1)}^n
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+    v_{(i)}^n\\
+    z_{(i)}^n
+    \end{bmatrix}
+    -
+    \begin{bmatrix}
+    \frac{\partial g_1}{\partial v} & \frac{\partial g_1}{\partial z}\\
+    \frac{\partial g_2}{\partial v} & \frac{\partial g_2}{\partial z}\\
+    \end{bmatrix}^{-1}
+    \begin{bmatrix}
+    g_1\\
+    g_2
+    \end{bmatrix}
+\end{equation}
+where the derivatives are defined as follows (see Section \ref{sec:derivations} for derivations of some of these): 
+\begin{align}
+    \frac{\partial g_1}{\partial v} &= \frac{2}{k} + 2\sigma_0 + \frac{s_2}{\rho Ah}\\
+    \frac{\partial g_1}{\partial z} &= \frac{s_0}{\rho A h} + \frac{2s_1}{k\rho Ah}\\
+    \frac{\partial g_2}{\partial v} &=  1-z^n\Bigg(\frac{(\frac{\partial \alpha^n}{\partial v}v^n + \alpha^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n}{(z_\text{ss}^n)^2}\Bigg)
+    \\\frac{\partial g_2}{\partial z}&= -\frac{v^n}{z_\text{ss}^n}\bigg(\frac{\partial \alpha^n}{\partial z}z^n + \alpha^n\bigg)-\frac{2}{k}
+\end{align}
+with
+\begin{align}
+    \frac{\partial\alpha^n}{\partial v} &=\frac{\partial z_\text{ss}^n}{\partial v}\frac{z_\text{ba} - \sgn(z^n) z^n}{(z_\text{ss}^n - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    \frac{\partial\alpha^n}{\partial z}&=\frac{\sgn(z^n)\pi\cos\big(\sgn(z^n)\Phi\big)}{2(z_\text{ss}^n-z_\text{ba})}\\
+    \frac{\partial z_\text{ss}^n}{\partial v} &= -\frac{2 v^n \sgn(v^n)}{v_\text{S}^2 s_0}(f_\text{S}-f_\text{C})e^{-(v^n/v_\text{S})^2}
+\end{align}
+\subsection{Derivations}\label{sec:derivations}
+\subsubsection*{Derivative of $\alpha$ with respect to $v$: $\frac{\partial \alpha^n}{\partial v}$}
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial \alpha^n}{\partial v} &= \frac{\partial}{\partial v}\Bigg(\frac{1}{2}\big[1+\sin(\sgn(z^n)\Phi)\big]\Bigg)\\
+        &= \frac{\partial}{\partial v}\Big(\sgn(z^n)\Phi\Big)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &= \frac{\partial}{\partial v}\Bigg(\frac{\sgn(z^n)\pi\big(z^n-\sgn(z^n)\frac{1}{2}(z_\text{ss}^n+z_\text{ba})\big)}{z_\text{ss}^n-z_\text{ba}}\Bigg)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &\\
+        &\begin{gathered}
+        \text{Quotient rule: }\boxed{\Bigg(\frac{f}{g}\Bigg)' = \frac{f'g - fg'}{g^2}}
+        \end{gathered}
+        \\
+        &\\
+        &= \frac{-\frac{\pi}{2}\frac{\partial z_\text{ss}^n}{\partial v}(z_\text{ss}^n-z_\text{ba}) - \frac{\partial z_\text{ss}^n}{\partial v}\Big(\sgn(z^n)\pi\big[z^n-\sgn(z^n)\frac{1}{2}(z_\text{ss}^n+z_\text{ba})\Big]\bigg)}{(z_\text{ss}^n - z_\text{ba})^2}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &= \frac{\partial z_\text{ss}^n}{\partial v}\frac{-\frac{\pi}{2}(z_\text{ss}^n-z_\text{ba}) + \frac{\pi}{2}(z_\text{ss}^n+z_\text{ba})-\sgn(z^n)\pi z^n}{(z_\text{ss}^n - z_\text{ba})^2}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &= \frac{\partial z_\text{ss}^n}{\partial v}\frac{z_\text{ba} - \sgn(z^n) z^n}{(z_\text{ss}^n - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)
+    \end{aligned}
+\end{equation}
+\subsubsection*{Derivative of $\alpha$ with respect to $z$: $\frac{\partial \alpha^n}{\partial z}$}
+\begin{equation}
+    \begin{aligned}
+    \frac{\partial \alpha^n}{\partial z} &= \frac{\partial}{\partial z} \Bigg(\frac{1}{2}\big[1+\sin(\sgn(z^n)\Phi)\big]\Bigg)\\
+    &= \frac{\partial}{\partial z}\Big(\sgn(z^n)\Phi\Big)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    &= \frac{\partial}{\partial z}\Bigg(\frac{\sgn(z^n)\pi\big(z^n-\sgn(z^n)\frac{1}{2}(z_\text{ss}^n+z_\text{ba})\big)}{z_\text{ss}^n-z_\text{ba}}\Bigg)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    &= \frac{\sgn(z^n)\pi}{z_\text{ss}^n-z_\text{ba}}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    &= \frac{\sgn(z^n)\pi\cos\big(\sgn(z^n)\Phi\big)}{2(z_\text{ss}^n-z_\text{ba})}
+    \end{aligned}
+\end{equation}
+\subsubsection*{Derivative of $z_\text{ss}$ with respect to $v$}
+\begin{equation}
+\begin{aligned}
+    \frac{\partial z_\text{ss}^n}{\partial v} &= \frac{\partial}{\partial v} \Bigg(\frac{\sgn(z^n)}{s_0}\Big(f_\text{C}+(f_\text{S}-f_\text{C})e^{-(v^n/v_\text{S})^2}\Big)\Bigg)\\
+    &= \frac{\partial}{\partial v}\big(-(v^n/v_\text{S})^2\big)\frac{\sgn(z^n)}{s_0}(f_\text{S}-f_\text{C})e^{-(v^n/v_\text{S})^2}\\
+    &= \frac{-2v^n\sgn(z^n)}{v_\text{S}^2s_0}(f_\text{S}-f_\text{C})e^{-(v/v_\text{S})^2}
+    \end{aligned}
+\end{equation}
+\subsubsection*{Derivative of $g_2$ with respect to $v$}
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial g_2}{\partial v} &= \frac{\partial}{\partial v} \Bigg(v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg]-a^n\Bigg)\\
+        &= 1 - \frac{\partial}{\partial v}\Bigg(\frac{\alpha^nv^nz^n}{z_\text{ss}^n}\Bigg)\\
+        &\\
+        &\begin{gathered}
+        \text{Quotient rule: }\boxed{\Bigg(\frac{f}{g}\Bigg)' = \frac{f'g - fg'}{g^2}}
+        \end{gathered}
+        \\
+        &\\
+        &= 1 - \frac{\frac{\partial}{\partial v}(\alpha^n v^n z^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n z^n}{(z_\text{ss}^n)^2}
+        \\
+        &\\
+        &\begin{gathered}
+        \text{Product rule: }\boxed{\big(f\cdot g\big)' = f'g + fg'}
+        \end{gathered}
+        \\
+        &\\
+        &= 1-\Bigg(\frac{(\frac{\partial \alpha^n}{\partial v}v^nz^n + \alpha^nz^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^nz^n}{(z_\text{ss}^n)^2}\Bigg)\\
+        &= 1-z^n\Bigg(\frac{(\frac{\partial \alpha^n}{\partial v}v^n + \alpha^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n}{(z_\text{ss}^n)^2}\Bigg)
+    \end{aligned}
+\end{equation}
+\subsubsection{Derivative of $g_2$ with respect to $z$}
+\begin{equation}
+    \begin{aligned}
+        \frac{\partial g_1}{\partial z} &= \frac{\partial}{\partial z} \Bigg(v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg] - a^n\Bigg)\\
+        &= \frac{\partial}{\partial z}\Bigg(-\frac{\alpha^nv^nz^n}{z_\text{ss}^n}\Bigg)-\frac{2}{k}
+        \\
+        &\\
+        &\begin{gathered}
+        \text{Product rule: }\boxed{\big(f\cdot g\big)' = f'g + fg'}
+        \end{gathered}
+        \\
+        &\\
+        & = -\frac{v^n}{z_\text{ss}^n}\bigg(\frac{\partial \alpha^n}{\partial z}z^n + \alpha^n\bigg)-\frac{2}{k}
+    \end{aligned}
+\end{equation}
+\section{Notes from before}
 Newton's method (or Newton-Raphson) is defined as
 \begin{equation}
     x^{i+1} = x^{i} - \frac{g(x^i)}{g'(x^i)}
@@ -96,8 +244,8 @@ In the iteration, we use the newly calculated value for $\dot z$ and the value o
 \begin{equation}
     z^n = z^{n-1} + \frac{k}{2}(\dot z^{i+1} + \dot z^{n-1}).
 \end{equation}
-Inserting this into \eqref{eq:newtonFunction} we can caluclate $v_\text{rel}$ using
+Inserting this into \eqref{eq:newtonFunction} we can caluclate $v$ using
 \begin{equation}
-    v_\text{rel} = \frac{-s_0z-s_1\dot z-b}{s_2 + \frac{2}{k} + 2\sigma_0}.
+    v = \frac{-s_0z-s_1\dot z-b}{s_2 + \frac{2}{k} + 2\sigma_0}.
 \end{equation}
 \end{document}
