@@ -11,6 +11,8 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage[]{algorithm2e}
+\usepackage{textcomp}
 \newenvironment{rcases}
   {\left.\begin{alignedat}{2}}
   {\end{alignedat}\right\rbrace}
@@ -26,7 +28,7 @@
 
 \section{Introduction}
 \SWcomment[Like in the dafx paper, ]\SBcomment[you can make comments like this!] \SScomment[Also you Stefania :)]
-\section{Continuous-time}
+\section{Continuous-time}\label{sec:continuous}
 The PDE for the bowed stiff string looks like:
 \begin{equation}
     u_{tt} = c^2u_{xx}-\kappa^2u_{xxxx}-2\sigma_0u_t+2\sigma_1u_{txx}-J(x_\text{B})f(v,z)/\rho A
@@ -44,16 +46,16 @@ with adhesion map
 \alpha(v, z) 
     \begin{cases}
     \begin{rcases}
-        &0 & |z| < z_\text{ba}\\
+        &0 & |z| \leq z_\text{ba}\\
        &\alpha_\text{m}(v,z)&\quad \  z_\text{ba}<|z|<z_\text{ss}(v)\\
-        &1 &|z|>z_\text{ss}(v)
+        &1 &|z|\geq z_\text{ss}(v)
         \end{rcases}\text{if}\  \sgn(v)=\sgn(z)\\
-        0\qquad \qquad \qquad \qquad \qquad \qquad \qquad\ \ \; \text{if}\  \sgn(v)\neq\sgn(z),
+        0\qquad \qquad \qquad \qquad \qquad \qquad \quad \, \text{if}\  \sgn(v)\neq\sgn(z),
     \end{cases}
 \end{equation}
 the transition between the elastic and plastic behaviour
 \begin{equation}
-    \alpha_\text{m} = \frac{1}{2}\big[1+\sin\big(\sgn(z)\Phi\big)\big]\quad \text{where}\quad \Phi = \pi\frac{z-\sgn(z)\frac{1}{2}(z_\text{ss}(v)+z_\text{ba})}{z_\text{ss}(v)-z_\text{ba}},
+    \alpha_\text{m} = \frac{1}{2}\big[1+\sin\big(\sgn(z)\Phi\big)\big]\quad \text{where}\quad \Phi = \pi\frac{z-\sgn(z)\frac{1}{2}(|z_\text{ss}(v)|+z_\text{ba})}{|z_\text{ss}(v)|-z_\text{ba}},
 \end{equation}
 and the steady-state function
 \begin{equation}\label{eq:zss}
@@ -65,9 +67,9 @@ The FDS for the bowed string looks like:
     \delta_{tt} u_l^n =c^2 \delta_{xx} u_l^n -\kappa^2\delta_{xxxx} u_l^n - 2\sigma_0\delta_{t\cdot} u_l^n
     + 2\sigma_1\delta_{t-}\delta_{xx}u_l^n - J(x_\text{B}^n)f(v^n, z^n)/\rho A,
 \end{equation}
-where $x_\text{B} \in [0,\hdots, L]$. If we use the following notation
+where $x_\text{B} \in [0,\hdots, L]$. If we use a truncating function rather than an interpolator and using the following notation
 \begin{equation}
-    I(x_\text{B}^n)u^n_l \Rightarrow u^n_{x_\text{B}}
+    I_0(x_\text{B}^n)u^n_l \Rightarrow u^n_{x_\text{B}}
 \end{equation}
 the following description for the relative velocity at the bowing point $x_\text{B}$ can be defined
 \begin{equation}
@@ -86,8 +88,8 @@ The excitation (or bowing) function is defined as
 \end{equation}
 where 
 \begin{equation}\label{eq:an}
-    a^n = (\mu_{t+})^{-1}\delta_{t+}z^n = \frac{2}{k}(z^n-z^{n-1})-a^{n-1}
-\end{equation}
+    a^n = (\mu_{t-})^{-1}\delta_{t-}z^n = \frac{2}{k}(z^n-z^{n-1})-a^{n-1}
+\end{equation} \SWcomment[Changed the forward to backward operators. Still a bilinear transform right?]{}
 is the discrete counterpart of $\dot{z}$ and describes the bilinear transform of $z$. 
 At the bowing position we can rewrite \eqref{eq:FDS} using the following identities
 \begin{equation}
@@ -139,13 +141,13 @@ where the derivatives are defined as follows (see Section \ref{sec:derivations} 
 \begin{align}
     \frac{\partial g_1}{\partial v} &= \frac{2}{k} + 2\sigma_0 + \frac{s_2}{\rho Ah}\\
     \frac{\partial g_1}{\partial z} &= \frac{s_0}{\rho A h} + \frac{2s_1}{k\rho Ah}\\
-    \frac{\partial g_2}{\partial v} &=  1-z^n\Bigg(\frac{(\frac{\partial \alpha^n}{\partial v}v^n + \alpha^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n}{(z_\text{ss}^n)^2}\Bigg)
+    \frac{\partial g_2}{\partial v} &=  1-z^n\Bigg(\frac{(\alpha^n+\frac{\partial \alpha^n}{\partial v}v^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n}{(z_\text{ss}^n)^2}\Bigg)\label{eq:g2v}
     \\\frac{\partial g_2}{\partial z}&= -\frac{v^n}{z_\text{ss}^n}\bigg(\frac{\partial \alpha^n}{\partial z}z^n + \alpha^n\bigg)-\frac{2}{k}
 \end{align}
 with
 \begin{align}
-    \frac{\partial\alpha^n}{\partial v} &=\frac{\partial z_\text{ss}^n}{\partial v}\frac{z_\text{ba} - \sgn(z^n) z^n}{(z_\text{ss}^n - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-    \frac{\partial\alpha^n}{\partial z}&=\frac{\sgn(z^n)\pi\cos\big(\sgn(z^n)\Phi\big)}{2(z_\text{ss}^n-z_\text{ba})}\\
+    \frac{\partial\alpha^n}{\partial v} &=\frac{\partial |z_\text{ss}^n|}{\partial v}\frac{z_\text{ba} - |z^n|}{(|z_\text{ss}^n| - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    \frac{\partial\alpha^n}{\partial z}&=\frac{\sgn(z^n)\pi\cos\big(\sgn(z^n)\Phi\big)}{2(|z_\text{ss}^n|-z_\text{ba})}\\
     \frac{\partial z_\text{ss}^n}{\partial v} &= -\frac{2 v^n \sgn(v^n)}{v_\text{S}^2 s_0}(f_\text{S}-f_\text{C})e^{-(v^n/v_\text{S})^2}
 \end{align}
 \subsection{Derivations}\label{sec:derivations}
@@ -154,16 +156,23 @@ with
     \begin{aligned}
         \frac{\partial \alpha^n}{\partial v} &= \frac{\partial}{\partial v}\Bigg(\frac{1}{2}\big[1+\sin(\sgn(z^n)\Phi)\big]\Bigg)\\
         &= \frac{\partial}{\partial v}\Big(\sgn(z^n)\Phi\Big)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-        &= \frac{\partial}{\partial v}\Bigg(\frac{\sgn(z^n)\pi\big(z^n-\sgn(z^n)\frac{1}{2}(z_\text{ss}^n+z_\text{ba})\big)}{z_\text{ss}^n-z_\text{ba}}\Bigg)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &= \frac{\partial}{\partial v}\Bigg(\frac{\sgn(z^n)\pi\big(z^n-\sgn(z^n)\frac{1}{2}(|z_\text{ss}^n|+z_\text{ba})\big)}{|z_\text{ss}^n|-z_\text{ba}}\Bigg)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
         &\\
         &\begin{gathered}
         \text{Quotient rule: }\boxed{\Bigg(\frac{f}{g}\Bigg)' = \frac{f'g - fg'}{g^2}}
         \end{gathered}
         \\
         &\\
-        &= \frac{-\frac{\pi}{2}\frac{\partial z_\text{ss}^n}{\partial v}(z_\text{ss}^n-z_\text{ba}) - \frac{\partial z_\text{ss}^n}{\partial v}\Big(\sgn(z^n)\pi\big[z^n-\sgn(z^n)\frac{1}{2}(z_\text{ss}^n+z_\text{ba})\Big]\bigg)}{(z_\text{ss}^n - z_\text{ba})^2}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-        &= \frac{\partial z_\text{ss}^n}{\partial v}\frac{-\frac{\pi}{2}(z_\text{ss}^n-z_\text{ba}) + \frac{\pi}{2}(z_\text{ss}^n+z_\text{ba})-\sgn(z^n)\pi z^n}{(z_\text{ss}^n - z_\text{ba})^2}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-        &= \frac{\partial z_\text{ss}^n}{\partial v}\frac{z_\text{ba} - \sgn(z^n) z^n}{(z_\text{ss}^n - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)
+        &= \frac{-\frac{\pi}{2}\frac{\partial |z_\text{ss}^n|}{\partial v}(|z_\text{ss}^n|-z_\text{ba}) - \frac{\partial |z_\text{ss}^n|}{\partial v}\Big(\sgn(z^n)\pi\big[z^n-\sgn(z^n)\frac{1}{2}(|z_\text{ss}^n|+z_\text{ba})\Big]\bigg)}{(|z_\text{ss}^n| - z_\text{ba})^2}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &= \frac{\partial |z_\text{ss}^n|}{\partial v}\frac{-\frac{\pi}{2}(|z_\text{ss}^n|-z_\text{ba}) + \frac{\pi}{2}(|z_\text{ss}^n|+z_\text{ba})-\sgn(z^n)\pi z^n}{(|z_\text{ss}^n| - z_\text{ba})^2}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+        &= \frac{\partial |z_\text{ss}^n|}{\partial v}\frac{z_\text{ba} - |z^n|}{(|z_\text{ss}^n| - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)
+        &\\
+        &\begin{gathered}
+        \text{Derivative of absolute value: }\boxed{|f|' = \frac{f}{|f|}f'= \sgn(f)f'}
+        \end{gathered}
+        \\
+        &\\
+        &=\sgn(z_\text{ss})\frac{\partial z_\text{ss}^n}{\partial v}\frac{z_\text{ba} - |z^n|}{(|z_\text{ss}^n| - z_\text{ba})^2}\frac{\pi}{2}\cos\big(\sgn(z^n)\Phi\big)
     \end{aligned}
 \end{equation}
 \subsubsection*{Derivative of $\alpha$ with respect to $z$: $\frac{\partial \alpha^n}{\partial z}$}
@@ -171,9 +180,9 @@ with
     \begin{aligned}
     \frac{\partial \alpha^n}{\partial z} &= \frac{\partial}{\partial z} \Bigg(\frac{1}{2}\big[1+\sin(\sgn(z^n)\Phi)\big]\Bigg)\\
     &= \frac{\partial}{\partial z}\Big(\sgn(z^n)\Phi\Big)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-    &= \frac{\partial}{\partial z}\Bigg(\frac{\sgn(z^n)\pi\big(z^n-\sgn(z^n)\frac{1}{2}(z_\text{ss}^n+z_\text{ba})\big)}{z_\text{ss}^n-z_\text{ba}}\Bigg)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-    &= \frac{\sgn(z^n)\pi}{z_\text{ss}^n-z_\text{ba}}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
-    &= \frac{\sgn(z^n)\pi\cos\big(\sgn(z^n)\Phi\big)}{2(z_\text{ss}^n-z_\text{ba})}
+    &= \frac{\partial}{\partial z}\Bigg(\frac{\sgn(z^n)\pi\big(z^n-\sgn(z^n)\frac{1}{2}(|z_\text{ss}^n|+z_\text{ba})\big)}{|z_\text{ss}^n|-z_\text{ba}}\Bigg)\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    &= \frac{\sgn(z^n)\pi}{|z_\text{ss}^n|-z_\text{ba}}\frac{1}{2}\cos\big(\sgn(z^n)\Phi\big)\\
+    &= \frac{\sgn(z^n)\pi\cos\big(\sgn(z^n)\Phi\big)}{2(|z_\text{ss}^n|-z_\text{ba})}
     \end{aligned}
 \end{equation}
 \subsubsection*{Derivative of $z_\text{ss}$ with respect to $v$}
@@ -203,14 +212,14 @@ with
         \end{gathered}
         \\
         &\\
-        &= 1-\Bigg(\frac{(\frac{\partial \alpha^n}{\partial v}v^nz^n + \alpha^nz^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^nz^n}{(z_\text{ss}^n)^2}\Bigg)\\
-        &= 1-z^n\Bigg(\frac{(\frac{\partial \alpha^n}{\partial v}v^n + \alpha^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n}{(z_\text{ss}^n)^2}\Bigg)
+        &= 1-\Bigg(\frac{(\alpha^nz^n + \frac{\partial \alpha^n}{\partial v}v^nz^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^nz^n}{(z_\text{ss}^n)^2}\Bigg)\\
+        &= 1-z^n\Bigg(\frac{(\alpha^n+\frac{\partial \alpha^n}{\partial v}v^n)z_\text{ss}^n - \frac{\partial z_\text{ss}^n}{\partial v}\alpha^n v^n}{(z_\text{ss}^n)^2}\Bigg)
     \end{aligned}
 \end{equation}
 \subsubsection{Derivative of $g_2$ with respect to $z$}
 \begin{equation}
     \begin{aligned}
-        \frac{\partial g_1}{\partial z} &= \frac{\partial}{\partial z} \Bigg(v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg] - a^n\Bigg)\\
+        \frac{\partial g_2}{\partial z} &= \frac{\partial}{\partial z} \Bigg(v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg] - a^n\Bigg)\\
         &= \frac{\partial}{\partial z}\Bigg(-\frac{\alpha^nv^nz^n}{z_\text{ss}^n}\Bigg)-\frac{2}{k}
         \\
         &\\
@@ -222,6 +231,29 @@ with
         & = -\frac{v^n}{z_\text{ss}^n}\bigg(\frac{\partial \alpha^n}{\partial z}z^n + \alpha^n\bigg)-\frac{2}{k}
     \end{aligned}
 \end{equation}
+
+\section{Order of calculation}
+Essentially, the order of calculation happens from top to bottom in section \ref{sec:continuous}
+\begin{algorithm}[h]\label{alg:calcOrder}
+\fbox{\parbox{0.93\linewidth}{
+ \For{t = 1:lengthSound}{
+ calculate computable part $b^n$
+  \While{eps $<$ tol}{
+    calculate..\\
+    1. $z_\text{ss}(v_{(i)}^n)$\\
+    2. $\alpha(v_{(i)}^n,z_{(i)}^n)$\\
+    3. $a^n$\\
+    4. $\dot{z}(v^n, z^n)$\\
+    5. $g_1$, $g_2$\\
+    6.--10. Compute derivatives in the same order. \\
+    11. Perform vector NR to obtain $v_{(i+1)}$ and $z_{(i+1)}$
+  }
+  Calculate $\mathbf{u}^{n+1}$ using the values for $v^n$ and $z^n$ from the NR. 
+ }
+ }}
+ \caption{Pseudocode showing the correct order of calculation.}
+\end{algorithm}
+
 \section{Notes from before}
 Newton's method (or Newton-Raphson) is defined as
 \begin{equation}
