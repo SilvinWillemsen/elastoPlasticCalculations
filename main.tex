@@ -84,13 +84,12 @@ Then, equation \eqref{eq:FDS1} can be rewritten at the bowing point $l=x_\text{B
 where we need to iteratively solve for two unknown variables: the relative velocity between the bow and the string $v$ and the mean bristle displacement $z$ of the bow.
 The excitation (or bowing) function is defined as
 \begin{equation}
-    f(v^n, z^n) = s_0z^n + s_1 a^n + s_2v^n + s_3w^n
+    f(v^n, z^n) = s_0z^n + s_1 \dot{z}^n + s_2v^n + s_3w^n\ .
 \end{equation}
-where 
-\begin{equation}\label{eq:an}
-    a^n = (\mu_{t-})^{-1}\delta_{t-}z^n = \frac{2}{k}(z^n-z^{n-1})-a^{n-1}
-\end{equation} \SWcomment[Changed the forward to backward operators. Still a bilinear transform right?]{}
-is the discrete counterpart of $\dot{z}$ and describes the bilinear transform of $z$. 
+We can use $\alpha^n = \alpha(v^n, z^n)$ and $z_\text{ss}^n = z_\text{ss}(v^n)$ as the discrete counterparts of \eqref{eq:alpha} and \eqref{eq:zss} respectively, to define the discrete counterpart of $\dot{z}$ in \eqref{eq:zdot}
+\begin{equation}
+    \dot{z}^n = \dot{z}(v^n,z^n)= v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg]\ .
+\end{equation}
 At the bowing position we can rewrite \eqref{eq:FDS} using the following identities
 \begin{equation}
     \delta_{tt}u_l^n = \frac{2}{k}\big(\delta_{t\cdot}u_l^n-\delta_{t-}u_l^n\big) \quad \text{ and } \quad \delta_{t\cdot}u_l^n = v^n + v_\text{B}^n,
@@ -105,16 +104,21 @@ resulting in
 \\
 This can be rewritten to
 \begin{equation}\label{eq:newtonFunction}
-g_1(v^n, z^n) = \Big(\frac{2}{k} + 2\sigma_0\Big)v^n + \frac{s_0z^n+s_1a^n+s_2v^n+s_3w^n}{\rho A h} + b^n = 0 \end{equation}
+g_1(v^n, z^n) = \Big(\frac{2}{k} + 2\sigma_0\Big)v^n + \frac{s_0z^n+s_1\dot{z}^n+s_2v^n+s_3w^n}{\rho A h} + b^n = 0 \end{equation}
 where
 \begin{equation}
     b^n = \frac{2}{k}v_\text{B}^n-\frac{2}{k}\delta_{t-}u_l^n - c^2 \delta_{xx} u_l^n +\kappa^2\delta_{xxxx} u_l^n + 2\sigma_0v_\text{B}^n
 - 2\sigma_1\delta_{t-}\delta_{xx}u_l^n
 \end{equation}
-can be pre-computed. Using $\alpha^n = \alpha(v^n, z^n)$ and $z_\text{ss}^n = z_\text{ss}(v^n)$ as the discrete counterparts of \eqref{eq:alpha} and \eqref{eq:zss} respectively, we can rewrite equation \eqref{eq:zdot} to (using $a^n$ in \eqref{eq:an})
+can be pre-computed. Using $a^n$ in \eqref{eq:an}, a second function can be defined
 \begin{equation}
-   g_2(v^n,z^n) = v^n\bigg[1-\alpha^n\frac{z^n}{z_\text{ss}^n}\bigg] -  a^n = 0.
+   g_2(v^n,z^n) = \dot{z}^n -  a^n = 0,
 \end{equation}
+where
+\begin{equation}\label{eq:an}
+    a^n = (\mu_{t-})^{-1}\delta_{t-}z^n = \frac{2}{k}(z^n-z^{n-1})-a^{n-1}
+\end{equation} \SWcomment[Changed the forward to backward operators. Still a bilinear transform right?]{}
+describes the bilinear transform of $z$. 
 This function, together with \eqref{eq:newtonFunction} can be used for multivariate newton raphson:
 
 \begin{equation}
@@ -237,21 +241,24 @@ Essentially, the order of calculation happens from top to bottom in section \ref
 \begin{algorithm}[h]\label{alg:calcOrder}
 \fbox{\parbox{0.93\linewidth}{
  \For{t = 1:lengthSound}{
- calculate computable part $b^n$
-  \While{eps $<$ tol}{
+ calculate computable part $b^n$\\
+ $i = 0$\\
+  \While{$\epsilon <$ tol}{
     calculate..\\
     1. $z_\text{ss}(v_{(i)}^n)$\\
     2. $\alpha(v_{(i)}^n,z_{(i)}^n)$\\
     3. $a^n$\\
-    4. $\dot{z}(v^n, z^n)$\\
+    4. $\dot{z}(v^n_{(i)}, z^n_{(i)})$\\
     5. $g_1$, $g_2$\\
-    6.--10. Compute derivatives in the same order. \\
-    11. Perform vector NR to obtain $v_{(i+1)}$ and $z_{(i+1)}$
+    6. Calculate $\epsilon$: $\epsilon = \Big|\dot{z}(v^n_{(i)}, z^n_{(i)}) - \dot{z}(v^n_{(i-1)}, z^n_{(i-1)})\Big|$\\
+    7.--11. Compute derivatives of 1.--5. in the same order. \\
+    12. Perform vector NR to obtain $v_{(i+1)}$ and $z_{(i+1)}$\\
+    13. Increment $i$: $i = i + 1$
   }
   Calculate $\mathbf{u}^{n+1}$ using the values for $v^n$ and $z^n$ from the NR. 
  }
  }}
- \caption{Pseudocode showing the correct order of calculation.}
+ \caption{Pseudocode showing the current order of calculation.}
 \end{algorithm}
 
 \section{Notes from before}
