@@ -35,19 +35,10 @@ with wave speed $c = \sqrt{T/\rho A}$ and stiffness $\kappa = \sqrt{EI/\rho A}$ 
 \begin{equation}
     f(v, z) = s_0z + s_1\dot z + s_2v + s_3w
 \end{equation}
-with relative velocity $v$ and average bristle displacement $z$. The time derivative of $z$ -- the rate of change of the bristle displacement -- is defined as \SWcomment[like this right?]{}
+with relative velocity $v$ and average bristle displacement $z$. The time derivative of $z$ -- the rate of change of the bristle displacement -- is defined as
 \begin{equation}\label{eq:zdot}
     \dot z = r(v,z) = v\bigg[1-\alpha(v, z)\frac{z}{z_\text{ss}(v)}\bigg]
 \end{equation}
-\SBcomment[yes...]
-
-\SBcomment[One thing...can't you just substitute (3) into (2) and get rid of the $\dot{z}$ variable entirely?]\SWcomment[ and then just use this single equation for vector NR? Don't you need 2 equations to solve for 2 variables?]{}
-\SBcomment[No, just momentarily confused...] \SWcomment[Because I think that in the code, we do substitute, or at least, calculate $\dot{z}$ as described in (3) and then use this value in (2). But I suppose you figured that :)]{}
-\SBcomment[OK, I think it would help a lot, in framing things, to rewrite the above as]
-\begin{equation}
-    \dot{z} = r(v,z)
-\end{equation}
-\SBcomment[So that you don't have to carry around $\dot{z}$ as a variable anymore...]
 with adhesion map
 \begin{equation}\label{eq:alpha}
 \alpha(v, z) 
@@ -125,8 +116,7 @@ can be pre-computed. Using $a^n$ in \eqref{eq:an}, a second function can be defi
 where
 \begin{equation}\label{eq:an}
     a^n = (\mu_{t-})^{-1}\delta_{t-}z^n = \frac{2}{k}(z^n-z^{n-1})-a^{n-1}
-\end{equation} \SWcomment[Changed the forward to backward operators. Still a bilinear transform right?]{}
-\SBcomment[What happens if you just use (11) as written instead of this...] \SWcomment[you mean solving (11) substituted in (10) for $\dot{z}$?]{}\SBcomment[Hey, no, I take that back, this looks ok actually]
+\end{equation}
 describes the bilinear transform of $z$. 
 This function, together with \eqref{eq:newtonFunction} can be used for multivariate newton raphson:
 
